@@ -28,7 +28,7 @@ As context grows, so does the KV cache. On a single RTX 3090 (24GB), a 256k cont
 | `q4_0` | 4-bit quantization | ⭐⭐ Noticeable on long contexts | ██░░░░░░ Quarter |
 | `turbo4` | 4-bit, TurboQuant algorithm — designed to match q8 quality at q4 size | ⭐⭐⭐ Near-lossless | ██░░░░░░ Quarter |
 
-> **Note:** `turbo4` is a Cloudflare Research algorithm integrated into `llama.cpp`. It uses a higher-quality 4-bit quantization scheme specifically designed for the KV cache attention patterns, achieving near-8-bit quality at 4-bit storage cost.
+> **Note:** TurboQuant was developed by Google Research and Google DeepMind. The `turbo4` KV cache type used by this project is provided by [TheTom's llama.cpp TurboQuant fork](https://github.com/TheTom/llama-cpp-turboquant/tree/feature/turboquant-kv-cache), not upstream `llama.cpp`.
 
 ## Recommendation by Setup
 

@@ -9,8 +9,8 @@ The key idea is separation: **Open WebUI and your chat history stay on a server 
 The node is designed to be operated by an AI coding agent such as Claude Code or Codex with the Cloudflare and RunPod MCP servers connected. Configure the private template once, ask the agent to launch the LLM, do your work, then ask it to stop the pod. GPU billing stops while your private chat system remains online.
 
 [![Runtime](https://img.shields.io/badge/runtime-Bash-4EAA25?logo=gnu-bash&logoColor=white)](runpod_init.sh)
-[![API](https://img.shields.io/badge/API-OpenAI--compatible-412991)](https://github.com/ggml-org/llama.cpp/tree/master/tools/server)
-[![Inference](https://img.shields.io/badge/inference-llama.cpp-111111)](https://github.com/ggml-org/llama.cpp)
+[![API](https://img.shields.io/badge/API-OpenAI--compatible-412991)](https://github.com/TheTom/llama-cpp-turboquant/tree/feature/turboquant-kv-cache/tools/server)
+[![Inference](https://img.shields.io/badge/inference-llama.cpp%20TurboQuant-111111)](https://github.com/TheTom/llama-cpp-turboquant/tree/feature/turboquant-kv-cache)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 
 Created and maintained by [gushmazuko](https://github.com/gushmazuko).
@@ -108,7 +108,7 @@ This architecture keeps persistent chat ownership with you, but it does not pret
 | Component | Why it is here |
 |---|---|
 | [RunPod](https://www.runpod.io/) | Provides on-demand GPUs without making the rental pod the permanent home of your UI or chats. A network volume lets model artifacts survive pod replacement. |
-| [llama.cpp](https://github.com/ggml-org/llama.cpp) | Runs a broad ecosystem of quantized GGUF models efficiently and exposes an OpenAI-compatible server with streaming and tool-call support. |
+| [llama.cpp TurboQuant fork](https://github.com/TheTom/llama-cpp-turboquant/tree/feature/turboquant-kv-cache) | Builds `llama-server` with CUDA and TurboQuant KV cache support, runs quantized GGUF models, and exposes an OpenAI-compatible API with streaming and tool-call support. |
 | [Cloudflare Tunnel](https://developers.cloudflare.com/tunnel/) | Gives the pod a stable public hostname through outbound-only connections, so port `8080` does not need to be published by RunPod. |
 | Bearer API key | Uses the authentication pattern already understood by OpenAI clients. The key is checked at `llama-server`, behind the tunnel. |
 | [Open WebUI](https://openwebui.com/) on your server | Keeps the chat database, users, uploaded files, and backups on infrastructure you control instead of the GPU rental. |

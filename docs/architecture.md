@@ -21,7 +21,7 @@ RunPod GPU Pod
      │
      │  localhost:8080
      ▼
-llama-server (llama.cpp)
+llama-server (TheTom's llama.cpp TurboQuant fork)
      │
      └── /workspace/models/*.gguf
 ```
