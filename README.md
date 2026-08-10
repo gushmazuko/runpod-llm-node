@@ -103,11 +103,39 @@ This architecture keeps persistent chat ownership with you, but it does not pret
 - Configurable context size, GPU offload, continuous batching, Flash Attention, and KV cache types
 - Optional TurboQuant KV cache support for fitting longer contexts into limited VRAM
 
+## Reference deployment and cost
+
+The reference deployment for this repository uses the following configuration:
+
+| Resource | Reference choice |
+|---|---|
+| GPU | NVIDIA RTX 6000 Ada, 48 GB VRAM |
+| Hugging Face repository | [`DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-NEO-MAX-MTP-GGUF`](https://huggingface.co/DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-NEO-MAX-MTP-GGUF) |
+| Model file | [`Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-Q6_K.gguf`](https://huggingface.co/DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-NEO-MAX-MTP-GGUF/blob/main/Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-Q6_K.gguf) |
+| Persistent storage | Standard 40 GB RunPod network volume mounted at `/workspace` |
+| KV cache | `q8_0` for K and `turbo4` for V |
+
+Pricing observed for Secure Cloud in `US-IL-1` on 2026-08-10. See [RunPod Pod pricing](https://docs.runpod.io/pods/pricing) for current billing rules:
+
+| Usage | Approximate cost |
+|---|---:|
+| RTX 6000 Ada while running | $0.84/hour |
+| RTX 6000 Ada while stopped | $0 |
+| Standard 40 GB network volume | $2.80/month |
+| Four-hour work session | $3.36 in GPU compute |
+| 20 GPU hours per month plus storage | $19.60/month |
+| Running continuously for 730 hours plus storage | $616/month |
+
+RunPod prices and GPU availability vary by region and can change. Ask the AI agent to check the current rate through RunPod MCP before deployment. Container storage and optional RunPod services are billed separately.
+
+Standard network storage is intentional. The project writes heavily during the first model download and `llama-server` build, then reads the model when a pod starts. Once the model is initialized and offloaded, steady-state inference runs from system memory and VRAM, so faster storage does not improve token generation speed. High-performance network storage can reduce download, build, or cold-start time, but at the observed rate it doubles the persistent storage cost to $5.60/month for 40 GB without improving steady-state inference throughput.
+
 ## Why this stack
 
 | Component | Why it is here |
 |---|---|
 | [RunPod](https://www.runpod.io/) | Provides on-demand GPUs without making the rental pod the permanent home of your UI or chats. A network volume lets model artifacts survive pod replacement. |
+| Standard RunPod network volume | Keeps the model and compiled server between disposable pods at low idle cost. High-performance storage is unnecessary for normal inference after the model is loaded. |
 | [llama.cpp TurboQuant fork](https://github.com/TheTom/llama-cpp-turboquant/tree/feature/turboquant-kv-cache) | Builds `llama-server` with CUDA and TurboQuant KV cache support, runs quantized GGUF models, and exposes an OpenAI-compatible API with streaming and tool-call support. |
 | [Cloudflare Tunnel](https://developers.cloudflare.com/tunnel/) | Gives the pod a stable public hostname through outbound-only connections, so port `8080` does not need to be published by RunPod. |
 | Bearer API key | Uses the authentication pattern already understood by OpenAI clients. The key is checked at `llama-server`, behind the tunnel. |
@@ -161,10 +189,10 @@ Create a private template for a clean GPU pod that waits for manual initializati
 
 | RunPod setting | Recommended value | Reason |
 |---|---|---|
-| GPU | Enough VRAM for the model weights and KV cache | Context length and concurrency also consume VRAM. |
+| GPU | NVIDIA RTX 6000 Ada with 48 GB VRAM for the reference deployment, or another GPU with enough VRAM | Model weights, context length, and concurrency all consume VRAM. |
 | Container image | CUDA development image with `nvcc`, for example `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404` | The script compiles a CUDA-native `llama-server`. |
 | Container disk | At least 30 GB | Holds the base container and temporary build dependencies. |
-| Network volume | Model size plus at least 20 percent, mounted at `/workspace` | Preserves the model and compiled binary independently of the pod. |
+| Network volume | Standard 40 GB or larger, mounted at `/workspace` | Preserves the reference Q6_K model and compiled binary independently of the pod. High-performance storage is optional and does not improve inference after loading. |
 | Start behavior | A clean pod waiting with `sleep infinity` | Initialization is performed manually through SSH. |
 | Exposed HTTP ports | None | The inference API is published only through Cloudflare Tunnel. |
 | Exposed TCP ports | `22` only | Used for SSH administration. Do not expose port `8080`. |
@@ -178,8 +206,8 @@ Use RunPod Secrets for sensitive values. Never commit real tokens to this reposi
 | Variable | Required | Default | Purpose |
 |---|---:|---|---|
 | `HF_TOKEN` | Yes | - | Hugging Face access token |
-| `MODEL_REPO` | Yes | - | Repository containing the GGUF model, such as `bartowski/Qwen2.5-Coder-32B-Instruct-GGUF` |
-| `MODEL_FILE` | Yes | - | Exact `.gguf` filename in that repository |
+| `MODEL_REPO` | Yes | - | Repository containing the GGUF model, such as `DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-NEO-MAX-MTP-GGUF` |
+| `MODEL_FILE` | Yes | - | Exact `.gguf` filename, such as `Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-Q6_K.gguf` |
 | `CF_TUNNEL_TOKEN` | Yes | - | Token for the remotely managed Cloudflare Tunnel |
 | `LLM_API_KEY` | No | Generated | Bearer key shared with Open WebUI and API clients |
 | `PORT` | No | `8080` | Local `llama-server` port |

@@ -7,8 +7,8 @@ All configuration is passed to the `runpod_init.sh` script via environment varia
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `HF_TOKEN` | ✅ | — | HuggingFace API token. Get it at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
-| `MODEL_REPO` | ✅ | — | HuggingFace repository path (e.g. `DavidAU/Qwen3.6-27B-Fable-Fusion-GGUF`) |
-| `MODEL_FILE` | ✅ | — | Exact `.gguf` filename within the repo (e.g. `Qwen3.6-27B-Q8_0.gguf`) |
+| `MODEL_REPO` | ✅ | — | HuggingFace repository path (reference: `DavidAU/Qwen3.6-27B-Fable-Fusion-711-Uncensored-Heretic-NM-DAU-NEO-MAX-MTP-GGUF`) |
+| `MODEL_FILE` | ✅ | — | Exact `.gguf` filename within the repo (reference: `Qwen3.6-27B-Fable-Fus-711-UnHeretic-NM-DAU-NEO-MAX-NEO-Q6_K.gguf`) |
 | `CF_TUNNEL_TOKEN` | ✅ | — | Cloudflare Tunnel token. Retrieved from Zero Trust dashboard → Tunnels |
 | `LLM_API_KEY` | ☑️ | auto-generated | Bearer token for the API. If not provided, a secure 48-char key is generated and printed to the logs |
 | `PORT` | ☑️ | `8080` | Local port for `llama-server` to listen on |

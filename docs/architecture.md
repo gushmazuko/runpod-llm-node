@@ -34,6 +34,12 @@ llama-server (TheTom's llama.cpp TurboQuant fork)
 - No public ports are opened on the pod itself
 - All outbound connectivity is via the Cloudflare tunnel
 
+### Standard Network Volume
+- Mounts at `/workspace` and keeps the GGUF model and compiled server independently of the disposable pod
+- Remains available while GPU compute is stopped
+- Is used heavily during the initial download, build, and pod startup, but is not the steady-state inference bottleneck after the model is loaded
+- High-performance storage is optional; it can reduce cold-start time but does not improve token generation after initialization
+
 ### Cloudflare Tunnel (`cloudflared`)
 - Establishes an outbound-only encrypted connection from the pod to Cloudflare's edge
 - Uses **Remotely Managed** mode: the tunnel configuration (which domain maps to which port) lives in the Cloudflare Zero Trust dashboard — not on the server
