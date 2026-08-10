@@ -1,0 +1,24 @@
+# Secrets & Keys
+.env
+*.key
+api_key.txt
+
+# Backups & Archives
+Backup/
+*.txz
+*.tar.gz
+*.zip
+
+# Old/draft files (kept locally but not published)
+old/
+
+# macOS
+.DS_Store
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+.idea/
