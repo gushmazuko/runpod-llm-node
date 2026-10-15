@@ -30,34 +30,45 @@ As context grows, so does the KV cache. On a single RTX 3090 (24GB), a 256k cont
 
 > **Note:** TurboQuant was developed by Google Research and Google DeepMind. The `turbo4` KV cache type used by this project is provided by [TheTom's llama.cpp TurboQuant fork](https://github.com/TheTom/llama-cpp-turboquant/tree/feature/turboquant-kv-cache), not upstream `llama.cpp`.
 
+> [!WARNING]
+> **Repetition Collapse Risk with `turbo4`**: On certain 27B+ models and merged architectures (particularly Qwen-derived and Multi-Token Prediction models), 4-bit KV cache quantization like `turbo4` can induce catastrophic repetition collapse (endless token loops). For production stability and agentic coding, **`q8_0` for both K and V cache** is the verified rock-solid baseline.
+
 ## Recommendation by Setup
 
-### Single GPU (24GB VRAM)
-Use `q8_0` for best quality within VRAM limits, or `turbo4` to push context windows beyond what `f16` or `q8_0` allow.
+### Single GPU (24GB - 48GB VRAM)
+Use `q8_0` for both K and V cache. It provides near-lossless attention fidelity, zero risk of repetition collapse, and cuts KV cache footprint in half compared to `f16`.
+
+```ini
+cache-type-k = q8_0
+cache-type-v = q8_0
+```
+
+### Extreme Memory Scenarios
+If context memory is completely exhausted on a small GPU (e.g. 256k on 24GB VRAM) and you are running standard LLaMA-3 architectures (non-MTP), `turbo4` can be used on V-cache:
 
 ```ini
 cache-type-k = q8_0
 cache-type-v = turbo4
 ```
 
-### Multi-GPU (4x 24GB = 96GB VRAM)
-You can afford `f16` for maximum quality. Only switch to `q8_0`/`turbo4` if you need extreme context windows (500k+) or want to run multiple models in parallel.
+### Multi-GPU / Unified Memory (96GB - 128GB+)
+You can comfortably afford `q8_0` or even `f16` for maximum precision.
 
 ```ini
-cache-type-k = f16
-cache-type-v = f16
+cache-type-k = q8_0
+cache-type-v = q8_0
 ```
 
 ## Does `turbo8` Exist?
 
-**No.** TurboQuant is specifically designed for 4-bit precision — that's where the quality-size tradeoff is most dramatic. For higher quality, use `f16`. The algorithm doesn't have an 8-bit variant because `q8_0` is already near-lossless.
+**No.** TurboQuant is specifically designed for 4-bit precision — that's where the quality-size tradeoff is most dramatic. For higher quality, use `q8_0` or `f16`. The algorithm doesn't have an 8-bit variant because `q8_0` is already near-lossless.
 
 ## Impact on Tool Use and Agentic Workloads
 
-For agentic workloads (coding assistants, tool-calling, long document analysis), the KV cache holds the entire conversation and tool output history. A compressed cache means:
+For agentic workloads (coding assistants, tool-calling, long document analysis), the KV cache holds the entire conversation and tool output history.
 
-- **More history fits** without swapping or truncation
-- **Faster prefill** when processing large contexts
-- **Risk**: Potential micro-degradation on extremely long contexts (500k+) with `turbo4`
+- **Stable Tool Calling**: `q8_0` ensures syntax and function call formatting remain 100% intact.
+- **Safety**: Avoids the "repetition collapse" loop when long agentic tool histories accumulate.
+- **Speed**: Quantized cache reduces memory bandwidth pressure during decoding, accelerating generation speed on memory-bandwidth-bound hardware.
 
-For most use cases, `cache-type-k = q8_0` with `cache-type-v = turbo4` is the best balance.
+For production use, **`cache-type-k = q8_0` and `cache-type-v = q8_0`** is our strongly recommended default.
